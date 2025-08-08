@@ -1,24 +1,26 @@
-from flask import Flask, request, jsonify
+import streamlit as st
 import joblib
-import numpy as np
+import pandas as pd
 
-app = Flask(__name__)
-
-# Load model dan scaler
-model = joblib.load("model_rf.pkl")
+# Load model & scaler
+model = joblib.load("model.pkl")
 scaler = joblib.load("scaler.pkl")
 
-@app.route("/")
-def home():
-    return "Customer Engagement Prediction API"
+st.title("Customer Engagement Prediction")
 
-@app.route("/predict", methods=["POST"])
-def predict():
-    data = request.get_json(force=True)
-    features = np.array(data["features"]).reshape(1, -1)
-    features_scaled = scaler.transform(features)
-    prediction = model.predict(features_scaled)
-    return jsonify({"prediction": int(prediction[0])})
+# Input form
+age = st.number_input("Age", min_value=10, max_value=100, value=30)
+gender = st.selectbox("Gender", ["Male", "Female"])
+feedback = st.selectbox("Feedback", ["Positive", "Neutral", "Negative"])
 
-if __name__ == "__main__":
-    app.run(debug=True)
+if st.button("Predict"):
+    # Contoh preprocessing sederhana
+    gender_val = 1 if gender == "Male" else 0
+    feedback_val = {"Positive": 2, "Neutral": 1, "Negative": 0}[feedback]
+    
+    X = pd.DataFrame([[age, gender_val, feedback_val]], 
+                     columns=["Age", "Gender", "Feedback"])
+    X_scaled = scaler.transform(X)
+    prediction = model.predict(X_scaled)
+    
+    st.write("Prediction:", prediction[0])
